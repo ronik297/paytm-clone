@@ -1,17 +1,5 @@
 const mongoose = require("mongoose");
 
-async function connectDB() {
-  try {
-    await mongoose.connect(process.env.DATABASE__URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("Database connected successfully");
-  } catch (error) {
-    console.log("Database connection failed");
-  }
-}
-
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
@@ -25,7 +13,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxLength: 50,
   },
-  username: {
+  userName: {
     type: String,
     required: true,
     unique: true,
@@ -41,9 +29,23 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+const accountSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  balance: {
+    type: Number,
+    required: true,
+  },
+});
+
 const User = mongoose.model("User", userSchema);
 
+const Account = mongoose.model("Account", accountSchema);
+
 module.exports = {
-  connectDB,
+  Account,
   User,
 };

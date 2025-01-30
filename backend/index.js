@@ -1,7 +1,8 @@
 const express = require("express");
 const dotenv = require("dotenv");
-
+const cors = require("cors");
 const rootRouter = require("./routes/index");
+const mongoose = require("mongoose");
 
 dotenv.config();
 
@@ -15,3 +16,16 @@ app.use("/api/v1", rootRouter);
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.DATABASE_URL, {
+      useNewUrlParser: true,
+    });
+    console.log("Database connected successfully");
+  } catch (error) {
+    console.log("Database connection failed", error);
+  }
+};
+
+connectDB();

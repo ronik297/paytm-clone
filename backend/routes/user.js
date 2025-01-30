@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
-const { JWT_SECRET } = require("../config");
 const User = require("../db").User;
+const Account = require("../db").Account;
 
 const z = require("zod");
+const { authMiddleware } = require("../middleware");
 
 const signupBody = z.object({
   userName: z.string().email(),
@@ -37,14 +38,20 @@ router.post("/signup", async (req, res) => {
   });
 
   const userId = user._id;
-  const token = jwt.sign({ userId }, JWT_SECRET);
+
+  await Account.create({
+    userId: userId,
+    balance: 1 + Math.random() * 10000,
+  });
+
+  const token = jwt.sign({ userId }, process.env.JWT_SECRET);
 
   res.json({ message: "User created successfully", token: token });
 });
 
 const signinBody = z.object({
   userName: z.string().email(),
-  password: z.string.string(),
+  password: z.string(),
 });
 
 router.post("/signin", async (req, res) => {
@@ -59,7 +66,7 @@ router.post("/signin", async (req, res) => {
   });
 
   if (user) {
-    const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
     return res.json({ token: token });
   }
 
@@ -74,7 +81,7 @@ const updateUserInfoBody = z.object({
   password: z.string().optional(),
 });
 
-router.put("/", async (req, res) => {
+router.put("/", authMiddleware, async (req, res) => {
   const { success } = updateUserInfoBody.safeParse(req.body);
   if (!success) {
     return res
@@ -82,12 +89,18 @@ router.put("/", async (req, res) => {
       .json({ message: "Error while updating information" });
   }
 
-  await User.updateOne({ _id: req.userId }, req.body);
+  const updatedDoc = await User.updateOne({ _id: req.userId }, req.body);
+
+  if (!updatedDoc) {
+    return res
+      .status(411)
+      .json({ message: "Error while updating information" });
+  }
 
   res.json({ message: "User updated successfully" });
 });
 
-router.put("/bulk", async (req, res) => {
+router.get("/bulk", authMiddleware, async (req, res) => {
   const query = req.query.filter || "";
 
   const users = await User.find({
@@ -98,7 +111,7 @@ router.put("/bulk", async (req, res) => {
     users: users.map((user) => {
       return {
         id: user._id,
-        username: user.username,
+        username: user.userName,
         firstName: user.firstName,
         lastName: user.lastName,
       };
