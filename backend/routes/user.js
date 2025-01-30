@@ -39,7 +39,7 @@ router.post("/signup", async (req, res) => {
   const userId = user._id;
   const token = jwt.sign({ userId }, JWT_SECRET);
 
-  return res.json({ message: "User created successfully", token: token });
+  res.json({ message: "User created successfully", token: token });
 });
 
 const signinBody = z.object({
@@ -65,6 +65,44 @@ router.post("/signin", async (req, res) => {
 
   res.status(411).json({
     message: "Error while logging in",
+  });
+});
+
+const updateUserInfoBody = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  password: z.string().optional(),
+});
+
+router.put("/", async (req, res) => {
+  const { success } = updateUserInfoBody.safeParse(req.body);
+  if (!success) {
+    return res
+      .status(411)
+      .json({ message: "Error while updating information" });
+  }
+
+  await User.updateOne({ _id: req.userId }, req.body);
+
+  res.json({ message: "User updated successfully" });
+});
+
+router.put("/bulk", async (req, res) => {
+  const query = req.query.filter || "";
+
+  const users = await User.find({
+    $or: [{ firstName: { $regex: query } }, { lastName: { $regex: query } }],
+  });
+
+  res.json({
+    users: users.map((user) => {
+      return {
+        id: user._id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      };
+    }),
   });
 });
 
