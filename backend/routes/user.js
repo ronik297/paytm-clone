@@ -100,7 +100,7 @@ router.put("/", authMiddleware, async (req, res) => {
   res.json({ message: "User updated successfully" });
 });
 
-router.get("/bulk", authMiddleware, async (req, res) => {
+router.get("/bulk", async (req, res) => {
   const query = req.query.filter || "";
 
   const users = await User.find({

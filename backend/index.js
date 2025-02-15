@@ -19,9 +19,7 @@ app.listen(3000, () => {
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.DATABASE_URL, {
-      useNewUrlParser: true,
-    });
+    await mongoose.connect(process.env.DATABASE_URL);
     console.log("Database connected successfully");
   } catch (error) {
     console.log("Database connection failed", error);
